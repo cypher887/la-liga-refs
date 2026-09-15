@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # LALIGA referee watch
 
 Browse LALIGA fixtures by gameweek in a web page, click to subscribe, and get
@@ -80,3 +81,6 @@ check its logs, or, if you do have Python available somewhere,
 | `subscriptions.json` | Your watch list (edited by the web UI) |
 | `watched_gameweeks.json` | Gameweeks kept fresh for browsing (edited by the web UI) |
 | `state.json` | Last-seen referee per subscribed match (avoids duplicate alerts) |
+=======
+# la-liga-refs
+>>>>>>> be46ceafe6f2b1bfa2a5aed1c33889eea2a2f1dd
