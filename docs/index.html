@@ -309,6 +309,24 @@ async function ghPutFile(path, obj, sha, message){
   return resp.json();
 }
 
+// Reads a JSON file, applies mutateFn to it, writes it back. If another
+// write landed in between (409 conflict — e.g. two Subscribe clicks close
+// together), re-reads the latest version and retries the whole thing.
+async function updateJsonFile(path, mutateFn, message, attempts = 5){
+  for (let i = 0; i < attempts; i++){
+    const { json, sha } = await ghGetFile(path);
+    const updated = mutateFn(json || []);
+    try {
+      await ghPutFile(path, updated, sha, message);
+      return updated;
+    } catch (e) {
+      const isConflict = /failed: 409/.test(e.message);
+      if (!isConflict || i === attempts - 1) throw e;
+      await new Promise(r => setTimeout(r, 300 + Math.random() * 300));
+    }
+  }
+}
+
 // ---- Fixture data (static files, no token needed) ----
 
 async function loadFixtureFile(season, gw){
@@ -331,18 +349,18 @@ async function subscribe(f, btn){
   btn.disabled = true;
   btn.textContent = "Subscribing…";
   try {
-    const { json, sha } = await ghGetFile("subscriptions.json");
-    const subs = json || [];
-    const exists = subs.some(s => s.season === f.season && s.gameweek === f.gameweek
-      && s.home === f.home && s.away === f.away);
-    if (!exists) {
-      subs.push({
-        season: f.season, gameweek: f.gameweek,
-        home: f.home, away: f.away,
-        notified: !!f.referee,
-      });
-      await ghPutFile("subscriptions.json", subs, sha, `Subscribe: ${f.home} vs ${f.away} (GW${f.gameweek})`);
-    }
+    await updateJsonFile("subscriptions.json", (subs) => {
+      const exists = subs.some(s => s.season === f.season && s.gameweek === f.gameweek
+        && s.home === f.home && s.away === f.away);
+      if (!exists) {
+        subs.push({
+          season: f.season, gameweek: f.gameweek,
+          home: f.home, away: f.away,
+          notified: !!f.referee,
+        });
+      }
+      return subs;
+    }, `Subscribe: ${f.home} vs ${f.away} (GW${f.gameweek})`);
     btn.textContent = "Subscribed ✓";
     renderSubs();
   } catch (e) {
@@ -355,10 +373,11 @@ async function subscribe(f, btn){
 async function unsubscribe(f, btn){
   btn.disabled = true;
   try {
-    const { json, sha } = await ghGetFile("subscriptions.json");
-    const subs = (json || []).filter(s => !(s.season === f.season && s.gameweek === f.gameweek
-      && s.home === f.home && s.away === f.away));
-    await ghPutFile("subscriptions.json", subs, sha, `Unsubscribe: ${f.home} vs ${f.away} (GW${f.gameweek})`);
+    await updateJsonFile("subscriptions.json", (subs) =>
+      subs.filter(s => !(s.season === f.season && s.gameweek === f.gameweek
+        && s.home === f.home && s.away === f.away)),
+      `Unsubscribe: ${f.home} vs ${f.away} (GW${f.gameweek})`
+    );
     renderSubs();
   } catch (e) {
     btn.disabled = false;
@@ -367,12 +386,12 @@ async function unsubscribe(f, btn){
 }
 
 async function trackGameweek(season, gw){
-  const { json, sha } = await ghGetFile("watched_gameweeks.json");
-  const list = json || [];
-  if (!list.some(w => w.season === season && w.gameweek === gw)) {
-    list.push({ season, gameweek: gw });
-    await ghPutFile("watched_gameweeks.json", list, sha, `Track GW${gw} (${season})`);
-  }
+  await updateJsonFile("watched_gameweeks.json", (list) => {
+    if (!list.some(w => w.season === season && w.gameweek === gw)) {
+      list.push({ season, gameweek: gw });
+    }
+    return list;
+  }, `Track GW${gw} (${season})`);
 }
 
 // ---- Rendering ----
