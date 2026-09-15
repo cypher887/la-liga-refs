@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Referee Watch · LALIGA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pitch:#173A2E;
+    --pitch-dark:#0E2620;
+    --chalk:#F6F4EE;
+    --ink:#161B18;
+    --muted:#5B6660;
+    --card:#FFFFFF;
+    --line:#E4E1D8;
+    --amber:#E3A61B;
+    --amber-bg:#FBF0D6;
+    --ok:#2F6B4F;
+    --ok-bg:#E4F0E9;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--chalk);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.45;
+  }
+  h1,h2,h3,.num{
+    font-family:'Barlow Condensed',system-ui,sans-serif;
+    font-weight:700;
+    letter-spacing:0.01em;
+  }
+  header{
+    background:var(--pitch);
+    color:var(--chalk);
+    padding:28px 24px 22px;
+  }
+  header .inner{
+    max-width:920px;
+    margin:0 auto;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  header h1{
+    font-size:34px;
+    margin:0;
+    line-height:1;
+  }
+  header p{
+    margin:4px 0 0;
+    color:#C9D8CE;
+    font-size:14px;
+  }
+  button.linklike{
+    background:none;border:none;color:#C9D8CE;
+    font:inherit;font-size:13px;text-decoration:underline;
+    cursor:pointer;padding:0;
+  }
+  main{
+    max-width:920px;
+    margin:0 auto;
+    padding:24px;
+  }
+  section{margin-bottom:32px;}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+  label{font-size:13px;color:var(--muted);}
+  input[type=text],input[type=number],input[type=password]{
+    font:inherit;
+    padding:9px 11px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--card);
+    color:var(--ink);
+  }
+  input[type=number]{width:80px;}
+  .btn{
+    font:inherit;
+    font-weight:600;
+    font-size:14px;
+    padding:9px 16px;
+    border-radius:6px;
+    border:1px solid var(--pitch);
+    background:var(--pitch);
+    color:var(--chalk);
+    cursor:pointer;
+  }
+  .btn:hover{background:var(--pitch-dark);}
+  .btn:disabled{opacity:0.45;cursor:default;}
+  .btn.secondary{
+    background:var(--card);color:var(--pitch);
+  }
+  .btn.danger{
+    background:var(--card);color:#9A2B2B;border-color:#E3C7C7;
+  }
+  .btn.small{padding:6px 12px;font-size:13px;}
+
+  #settings{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 18px;
+    display:none;
+  }
+  #settings.open{display:block;}
+  #settings .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin:12px 0;
+  }
+  #settings .grid > div{display:flex;flex-direction:column;gap:4px;}
+  #settings .grid input{width:100%;}
+  #settings .note{font-size:12.5px;color:var(--muted);margin-top:10px;}
+  #settingsStatus{font-size:13px;margin-top:8px;}
+
+  .fixture{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:10px;
+  }
+  .fixture .when{
+    font-size:12.5px;
+    color:var(--muted);
+    min-width:118px;
+  }
+  .fixture .teams{flex:1;min-width:200px;}
+  .fixture .teams .num{font-size:19px;}
+  .fixture .score{color:var(--muted);font-weight:600;font-family:'Barlow Condensed',sans-serif;font-size:16px;}
+  .ref-pill{
+    font-size:12.5px;
+    padding:4px 10px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+  .ref-pill.pending{background:var(--amber-bg);color:#8C6A0B;}
+  .ref-pill.assigned{background:var(--ok-bg);color:var(--ok);}
+
+  #subsList .fixture{align-items:center;}
+  .empty{
+    color:var(--muted);
+    font-size:14px;
+    padding:20px 0;
+  }
+  .gw-missing{
+    background:var(--card);
+    border:1px dashed var(--line);
+    border-radius:10px;
+    padding:20px;
+    color:var(--muted);
+    font-size:14px;
+  }
+  .gw-missing .btn{margin-top:10px;}
+  footer{
+    max-width:920px;margin:0 auto;padding:0 24px 40px;
+    color:var(--muted);font-size:12.5px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <div>
+      <h1>Referee Watch</h1>
+      <p>LALIGA fixtures, gameweek by gameweek — subscribe and get a Slack ping when a referee is announced.</p>
+    </div>
+    <button class="linklike" id="settingsToggle">Settings</button>
+  </div>
+</header>
+
+<main>
+
+  <section>
+    <div id="settings">
+      <h3 style="margin:0 0 4px;font-size:18px;">Connection</h3>
+      <p style="margin:0;font-size:13px;color:var(--muted);">
+        Needed once, kept only in this browser (never sent anywhere but GitHub).
+      </p>
+      <div class="grid">
+        <div>
+          <label for="cfgOwner">Repo owner</label>
+          <input type="text" id="cfgOwner" placeholder="e.g. your-github-username">
+        </div>
+        <div>
+          <label for="cfgRepo">Repo name</label>
+          <input type="text" id="cfgRepo" placeholder="laliga-referee-watch">
+        </div>
+      </div>
+      <div>
+        <label for="cfgToken">GitHub token (fine-grained, this repo only, Contents: read &amp; write)</label>
+        <input type="password" id="cfgToken" placeholder="github_pat_..." style="width:100%;margin-top:4px;">
+      </div>
+      <div class="row" style="margin-top:12px;">
+        <button class="btn" id="saveSettings">Save</button>
+        <span id="settingsStatus"></span>
+      </div>
+      <p class="note">
+        Create a token at github.com → Settings → Developer settings → Fine-grained tokens →
+        restrict it to this one repository with "Contents" read/write permission only.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2 style="font-size:22px;margin:0 0 12px;">Browse a gameweek</h2>
+    <div class="row" style="margin-bottom:16px;">
+      <label for="gwInput">Season</label>
+      <input type="text" id="seasonInput" value="2026-27" style="width:100px;">
+      <label for="gwInput">Gameweek</label>
+      <input type="number" id="gwInput" value="6" min="1" max="42">
+      <button class="btn secondary" id="loadGw">Load</button>
+    </div>
+    <div id="fixturesContainer"></div>
+  </section>
+
+  <section>
+    <h2 style="font-size:22px;margin:0 0 12px;">Your subscriptions</h2>
+    <div id="subsList"></div>
+  </section>
+
+</main>
+
+<footer>
+  Data from laliga.com, refreshed roughly every 15 minutes by a scheduled job in this repo.
+</footer>
+
+<script>
+const LS_KEY = "refwatch:settings";
+
+function getSettings(){
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; }
+  catch { return {}; }
+}
+function setSettings(s){ localStorage.setItem(LS_KEY, JSON.stringify(s)); }
+
+const settingsPanel = document.getElementById("settings");
+document.getElementById("settingsToggle").onclick = () => {
+  settingsPanel.classList.toggle("open");
+};
+
+function fillSettingsForm(){
+  const s = getSettings();
+  document.getElementById("cfgOwner").value = s.owner || "";
+  document.getElementById("cfgRepo").value = s.repo || "";
+  document.getElementById("cfgToken").value = s.token || "";
+}
+fillSettingsForm();
+if (!getSettings().token) settingsPanel.classList.add("open");
+
+document.getElementById("saveSettings").onclick = () => {
+  const s = {
+    owner: document.getElementById("cfgOwner").value.trim(),
+    repo: document.getElementById("cfgRepo").value.trim(),
+    token: document.getElementById("cfgToken").value.trim(),
+  };
+  setSettings(s);
+  const el = document.getElementById("settingsStatus");
+  el.textContent = "Saved.";
+  setTimeout(() => el.textContent = "", 2000);
+};
+
+// ---- GitHub Contents API helpers ----
+
+async function ghGetFile(path){
+  const s = getSettings();
+  const url = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${path}`;
+  const resp = await fetch(url, {
+    headers: {
+      "Authorization": `token ${s.token}`,
+      "Accept": "application/vnd.github+json",
+    },
+  });
+  if (resp.status === 404) return { json: null, sha: null };
+  if (!resp.ok) throw new Error(`GitHub GET ${path} failed: ${resp.status}`);
+  const data = await resp.json();
+  const content = decodeURIComponent(escape(atob(data.content)));
+  return { json: JSON.parse(content), sha: data.sha };
+}
+
+async function ghPutFile(path, obj, sha, message){
+  const s = getSettings();
+  const url = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${path}`;
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2) + "\n")));
+  const resp = await fetch(url, {
+    method: "PUT",
+    headers: {
+      "Authorization": `token ${s.token}`,
+      "Accept": "application/vnd.github+json",
+    },
+    body: JSON.stringify({ message, content, sha: sha || undefined }),
+  });
+  if (!resp.ok) {
+    const t = await resp.text();
+    throw new Error(`GitHub PUT ${path} failed: ${resp.status} ${t}`);
+  }
+  return resp.json();
+}
+
+// ---- Fixture data (static files, no token needed) ----
+
+async function loadFixtureFile(season, gw){
+  const resp = await fetch(`data/${season}-gw${gw}.json?_=${Date.now()}`, { cache: "no-store" });
+  if (resp.status === 404) return null;
+  if (!resp.ok) throw new Error(`Failed to load fixture data: ${resp.status}`);
+  return resp.json();
+}
+
+function fixtureKey(f){ return `${f.season}:${f.gameweek}:${f.home}:${f.away}`; }
+
+async function isSubscribed(f){
+  const { json } = await ghGetFile("subscriptions.json");
+  const subs = json || [];
+  return subs.some(s => s.season === f.season && s.gameweek === f.gameweek
+    && s.home === f.home && s.away === f.away);
+}
+
+async function subscribe(f, btn){
+  btn.disabled = true;
+  btn.textContent = "Subscribing…";
+  try {
+    const { json, sha } = await ghGetFile("subscriptions.json");
+    const subs = json || [];
+    const exists = subs.some(s => s.season === f.season && s.gameweek === f.gameweek
+      && s.home === f.home && s.away === f.away);
+    if (!exists) {
+      subs.push({
+        season: f.season, gameweek: f.gameweek,
+        home: f.home, away: f.away,
+        notified: !!f.referee,
+      });
+      await ghPutFile("subscriptions.json", subs, sha, `Subscribe: ${f.home} vs ${f.away} (GW${f.gameweek})`);
+    }
+    btn.textContent = "Subscribed ✓";
+    renderSubs();
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = "Subscribe";
+    alert(e.message);
+  }
+}
+
+async function unsubscribe(f, btn){
+  btn.disabled = true;
+  try {
+    const { json, sha } = await ghGetFile("subscriptions.json");
+    const subs = (json || []).filter(s => !(s.season === f.season && s.gameweek === f.gameweek
+      && s.home === f.home && s.away === f.away));
+    await ghPutFile("subscriptions.json", subs, sha, `Unsubscribe: ${f.home} vs ${f.away} (GW${f.gameweek})`);
+    renderSubs();
+  } catch (e) {
+    btn.disabled = false;
+    alert(e.message);
+  }
+}
+
+async function trackGameweek(season, gw){
+  const { json, sha } = await ghGetFile("watched_gameweeks.json");
+  const list = json || [];
+  if (!list.some(w => w.season === season && w.gameweek === gw)) {
+    list.push({ season, gameweek: gw });
+    await ghPutFile("watched_gameweeks.json", list, sha, `Track GW${gw} (${season})`);
+  }
+}
+
+// ---- Rendering ----
+
+function refPill(referee){
+  return referee
+    ? `<span class="ref-pill assigned">Ref: ${referee}</span>`
+    : `<span class="ref-pill pending">Ref TBD</span>`;
+}
+
+async function renderFixtures(){
+  const season = document.getElementById("seasonInput").value.trim();
+  const gw = parseInt(document.getElementById("gwInput").value, 10);
+  const container = document.getElementById("fixturesContainer");
+  container.innerHTML = "<p class='empty'>Loading…</p>";
+
+  const fixtures = await loadFixtureFile(season, gw);
+
+  if (fixtures === null) {
+    container.innerHTML = `
+      <div class="gw-missing">
+        Gameweek ${gw} (${season}) isn't tracked yet, so there's no data file for it.
+        <br>
+        <button class="btn small" id="trackBtn">Start tracking GW${gw}</button>
+        <span style="margin-left:8px;">It'll appear here within ~15 minutes of the next sync.</span>
+      </div>`;
+    document.getElementById("trackBtn").onclick = async (e) => {
+      e.target.disabled = true;
+      e.target.textContent = "Tracking…";
+      try {
+        await trackGameweek(season, gw);
+        e.target.textContent = "Tracking ✓ — check back soon";
+      } catch (err) {
+        e.target.disabled = false;
+        e.target.textContent = "Start tracking GW" + gw;
+        alert(err.message);
+      }
+    };
+    return;
+  }
+
+  if (fixtures.length === 0) {
+    container.innerHTML = "<p class='empty'>No fixtures found for this gameweek.</p>";
+    return;
+  }
+
+  const { json: subsJson } = await ghGetFile("subscriptions.json").catch(() => ({ json: [] }));
+  const subs = subsJson || [];
+
+  container.innerHTML = "";
+  for (const f of fixtures) {
+    const already = subs.some(s => s.season === f.season && s.gameweek === f.gameweek
+      && s.home === f.home && s.away === f.away);
+    const div = document.createElement("div");
+    div.className = "fixture";
+    div.innerHTML = `
+      <div class="when">${f.date || ""}<br>${f.time || ""}</div>
+      <div class="teams">
+        <div class="num">${f.home} ${f.score ? `<span class="score">${f.score}</span>` : "vs"} ${f.away}</div>
+      </div>
+      ${refPill(f.referee)}
+      <div></div>
+    `;
+    const actionSlot = div.lastElementChild;
+    if (f.referee) {
+      actionSlot.innerHTML = `<button class="btn secondary small" disabled>Already assigned</button>`;
+    } else if (already) {
+      actionSlot.innerHTML = `<button class="btn small" disabled>Subscribed ✓</button>`;
+    } else {
+      const btn = document.createElement("button");
+      btn.className = "btn small";
+      btn.textContent = "Subscribe";
+      btn.onclick = () => subscribe(f, btn);
+      actionSlot.appendChild(btn);
+    }
+    container.appendChild(div);
+  }
+}
+
+async function renderSubs(){
+  const list = document.getElementById("subsList");
+  if (!getSettings().token) {
+    list.innerHTML = "<p class='empty'>Add your GitHub connection in Settings to see subscriptions.</p>";
+    return;
+  }
+  list.innerHTML = "<p class='empty'>Loading…</p>";
+  let subs;
+  try {
+    const { json } = await ghGetFile("subscriptions.json");
+    subs = json || [];
+  } catch (e) {
+    list.innerHTML = `<p class='empty'>Couldn't load subscriptions: ${e.message}</p>`;
+    return;
+  }
+  if (subs.length === 0) {
+    list.innerHTML = "<p class='empty'>No subscriptions yet — subscribe to a fixture above.</p>";
+    return;
+  }
+  list.innerHTML = "";
+  for (const s of subs) {
+    const div = document.createElement("div");
+    div.className = "fixture";
+    div.innerHTML = `
+      <div class="when">GW${s.gameweek}<br>${s.season}</div>
+      <div class="teams"><div class="num">${s.home} vs ${s.away}</div></div>
+      <span class="ref-pill ${s.notified ? "assigned" : "pending"}">${s.notified ? "Notified" : "Watching"}</span>
+      <div></div>
+    `;
+    const btn = document.createElement("button");
+    btn.className = "btn danger small";
+    btn.textContent = "Unsubscribe";
+    btn.onclick = () => unsubscribe(s, btn);
+    div.lastElementChild.appendChild(btn);
+    list.appendChild(div);
+  }
+}
+
+document.getElementById("loadGw").onclick = renderFixtures;
+
+renderFixtures();
+renderSubs();
+</script>
+
+</body>
+</html>

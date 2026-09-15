@@ -1,0 +1,38 @@
+name: Check referee assignments
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Refresh fixture data for the web UI
+        run: python dump_fixtures.py
+
+      - name: Run referee check
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python check_referees.py
+
+      - name: Commit updated state/subscriptions/fixture data
+        run: |
+          git config user.name "referee-watch-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add subscriptions.json state.json docs/data
+          git diff --cached --quiet || git commit -m "Update referee-watch state [skip ci]"
+          git pull --rebase
+          git push
