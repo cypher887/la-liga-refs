@@ -1,5 +1,3 @@
-HEAD
-
 # LALIGA referee watch
 
 Browse LALIGA fixtures by gameweek in a web page, click to subscribe, and get
@@ -15,13 +13,15 @@ watching. No local install needed to use it day-to-day — a browser is enough.
    folder: `/docs` → Save. Your page will be live at
    `https://<you>.github.io/<repo>/` within a minute or two.
 
-3. **Create a Slack Incoming Webhook**
-   [api.slack.com/messaging/webhooks](https://api.slack.com/messaging/webhooks) →
-   create one for the channel you want alerts in → copy the URL.
+3. **Set up ntfy**
+   Install the [ntfy app](https://ntfy.sh/) (iOS/Android), pick a topic name
+   that's hard to guess (e.g. `laliga-refs-xk29fq`), and subscribe to it in
+   the app. That topic name is your whole "channel" — anyone who knows it
+   can publish to it, so don't use something obvious.
 
 4. **Add repo secret**
    Repo → Settings → Secrets and variables → Actions → New repository secret
-   → name `SLACK_WEBHOOK_URL` → paste the webhook URL.
+   → name `NTFY_TOPIC` → paste your topic name (just the name, not a URL).
 
 5. **Create a GitHub token for the web page**
    GitHub → Settings → Developer settings → Personal access tokens →
@@ -42,8 +42,8 @@ That's it — no Python, no `pip install`, nothing on your machine.
   scheduled job has fetched it.
 - **Subscribe**: click Subscribe on any fixture without a referee yet.
 - **Get notified**: within 15 minutes of the referee appearing on laliga.com,
-  you'll get a Slack message. The fixture will also show as "Notified" in
-  your subscriptions list.
+  you'll get a push notification via ntfy. The fixture will also show as
+  "Notified" in your subscriptions list.
 - **Unsubscribe** any time from the subscriptions list.
 
 ## How it fits together
@@ -76,14 +76,9 @@ check its logs, or, if you do have Python available somewhere,
 | `docs/index.html` | The browsable, clickable web UI (GitHub Pages) |
 | `scraper.py` | Fetches + parses a gameweek page into fixture data |
 | `dump_fixtures.py` | Writes `docs/data/*.json` for tracked/subscribed gameweeks |
-| `check_referees.py` | Checks subscriptions, notifies Slack, updates state |
-| `notify.py` | Posts a Slack message via webhook |
+| `check_referees.py` | Checks subscriptions, sends notifications, updates state |
+| `notify.py` | Sends a push notification via ntfy.sh |
 | `browse.py` | Optional CLI equivalent of the web UI, if you'd rather run it locally |
 | `subscriptions.json` | Your watch list (edited by the web UI) |
 | `watched_gameweeks.json` | Gameweeks kept fresh for browsing (edited by the web UI) |
 | `state.json` | Last-seen referee per subscribed match (avoids duplicate alerts) |
-
-# la-liga-refs
-be46ceafe6f2b1bfa2a5aed1c33889eea2a2f1dd
-
-5c272f600e8ff4b7e975090ea40b849ea56f0c07

@@ -25,7 +25,7 @@ jobs:
 
       - name: Run referee check
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: python check_referees.py
 
       - name: Commit updated state/subscriptions/fixture data
