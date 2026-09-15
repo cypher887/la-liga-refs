@@ -5,5 +5,12 @@
     "home": "Real Betis",
     "away": "Getafe CF",
     "notified": false
+  },
+  {
+    "season": "2026-27",
+    "gameweek": 6,
+    "home": "Málaga CF",
+    "away": "Villarreal CF",
+    "notified": false
   }
 ]
