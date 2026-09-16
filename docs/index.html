@@ -278,6 +278,7 @@ async function ghGetFile(path){
   const s = getSettings();
   const url = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${path}`;
   const resp = await fetch(url, {
+    cache: "no-store",
     headers: {
       "Authorization": `token ${s.token}`,
       "Accept": "application/vnd.github+json",
@@ -345,9 +346,15 @@ async function isSubscribed(f){
     && s.home === f.home && s.away === f.away);
 }
 
+// Counts in-flight subscribe/unsubscribe/track actions, so the background
+// poller (see bottom of file) can skip a cycle rather than re-rendering the
+// list out from under a button the user just clicked.
+let actionInProgress = 0;
+
 async function subscribe(f, btn){
   btn.disabled = true;
   btn.textContent = "Subscribing…";
+  actionInProgress++;
   try {
     await updateJsonFile("subscriptions.json", (subs) => {
       const exists = subs.some(s => s.season === f.season && s.gameweek === f.gameweek
@@ -367,11 +374,14 @@ async function subscribe(f, btn){
     btn.disabled = false;
     btn.textContent = "Subscribe";
     alert(e.message);
+  } finally {
+    actionInProgress--;
   }
 }
 
 async function unsubscribe(f, btn){
   btn.disabled = true;
+  actionInProgress++;
   try {
     await updateJsonFile("subscriptions.json", (subs) =>
       subs.filter(s => !(s.season === f.season && s.gameweek === f.gameweek
@@ -382,16 +392,23 @@ async function unsubscribe(f, btn){
   } catch (e) {
     btn.disabled = false;
     alert(e.message);
+  } finally {
+    actionInProgress--;
   }
 }
 
 async function trackGameweek(season, gw){
-  await updateJsonFile("watched_gameweeks.json", (list) => {
-    if (!list.some(w => w.season === season && w.gameweek === gw)) {
-      list.push({ season, gameweek: gw });
-    }
-    return list;
-  }, `Track GW${gw} (${season})`);
+  actionInProgress++;
+  try {
+    await updateJsonFile("watched_gameweeks.json", (list) => {
+      if (!list.some(w => w.season === season && w.gameweek === gw)) {
+        list.push({ season, gameweek: gw });
+      }
+      return list;
+    }, `Track GW${gw} (${season})`);
+  } finally {
+    actionInProgress--;
+  }
 }
 
 // ---- Rendering ----
@@ -402,15 +419,23 @@ function refPill(referee){
     : `<span class="ref-pill pending">Ref TBD</span>`;
 }
 
-async function renderFixtures(){
+// Snapshots of what's currently on screen, so a background poll can skip
+// touching the DOM entirely when nothing has actually changed.
+let lastFixturesSnapshot = null;
+let lastSubsSnapshot = null;
+
+async function renderFixtures(silent = false){
   const season = document.getElementById("seasonInput").value.trim();
   const gw = parseInt(document.getElementById("gwInput").value, 10);
   const container = document.getElementById("fixturesContainer");
-  container.innerHTML = "<p class='empty'>Loading…</p>";
+  if (!silent) container.innerHTML = "<p class='empty'>Loading…</p>";
 
   const fixtures = await loadFixtureFile(season, gw);
 
   if (fixtures === null) {
+    const snapshot = `missing:${season}:${gw}`;
+    if (silent && snapshot === lastFixturesSnapshot) return;
+    lastFixturesSnapshot = snapshot;
     container.innerHTML = `
       <div class="gw-missing">
         Gameweek ${gw} (${season}) isn't tracked yet, so there's no data file for it.
@@ -434,12 +459,19 @@ async function renderFixtures(){
   }
 
   if (fixtures.length === 0) {
+    const snapshot = `empty:${season}:${gw}`;
+    if (silent && snapshot === lastFixturesSnapshot) return;
+    lastFixturesSnapshot = snapshot;
     container.innerHTML = "<p class='empty'>No fixtures found for this gameweek.</p>";
     return;
   }
 
   const { json: subsJson } = await ghGetFile("subscriptions.json").catch(() => ({ json: [] }));
   const subs = subsJson || [];
+
+  const snapshot = JSON.stringify({ season, gw, fixtures, subs });
+  if (silent && snapshot === lastFixturesSnapshot) return;
+  lastFixturesSnapshot = snapshot;
 
   container.innerHTML = "";
   for (const f of fixtures) {
@@ -471,13 +503,13 @@ async function renderFixtures(){
   }
 }
 
-async function renderSubs(){
+async function renderSubs(silent = false){
   const list = document.getElementById("subsList");
   if (!getSettings().token) {
     list.innerHTML = "<p class='empty'>Add your GitHub connection in Settings to see subscriptions.</p>";
     return;
   }
-  list.innerHTML = "<p class='empty'>Loading…</p>";
+  if (!silent) list.innerHTML = "<p class='empty'>Loading…</p>";
   let subs;
   try {
     const { json } = await ghGetFile("subscriptions.json");
@@ -487,9 +519,17 @@ async function renderSubs(){
     return;
   }
   if (subs.length === 0) {
+    const snapshot = "empty";
+    if (silent && snapshot === lastSubsSnapshot) return;
+    lastSubsSnapshot = snapshot;
     list.innerHTML = "<p class='empty'>No subscriptions yet — subscribe to a fixture above.</p>";
     return;
   }
+
+  const snapshot = JSON.stringify(subs);
+  if (silent && snapshot === lastSubsSnapshot) return;
+  lastSubsSnapshot = snapshot;
+
   list.innerHTML = "";
   for (const s of subs) {
     const div = document.createElement("div");
@@ -509,10 +549,21 @@ async function renderSubs(){
   }
 }
 
-document.getElementById("loadGw").onclick = renderFixtures;
+document.getElementById("loadGw").onclick = () => renderFixtures(false);
 
 renderFixtures();
 renderSubs();
+
+// Poll in the background so subscriptions/referee status update on their
+// own — no manual refresh needed. Paused while a subscribe/unsubscribe
+// click is actively in flight (actionInProgress) to avoid the list
+// re-rendering out from under a button the user just clicked.
+setInterval(() => {
+  if (actionInProgress > 0) return;
+  renderFixtures(true).catch(() => {});
+  renderSubs(true).catch(() => {});
+}, 20000);
+
 </script>
 
 </body>

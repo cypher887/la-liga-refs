@@ -1,9 +1,11 @@
 """
 Run every 15 min (see .github/workflows/check-referees.yml).
 
-Only fetches gameweeks that have at least one un-notified subscription, and
+Only fetches gameweeks that have at least one active subscription, and
 skips entirely (no network calls) if there are none — so it's cheap to run
-on a schedule even when nothing is pending.
+on a schedule even when nothing is pending. Once a subscribed fixture's
+referee is announced, that subscription is removed entirely (auto-unsubscribe)
+rather than just flagged, since there's nothing further to watch for.
 """
 import json
 import sys
@@ -35,15 +37,15 @@ def main() -> None:
     subscriptions = load_json(SUBSCRIPTIONS_FILE, [])
     state = load_json(STATE_FILE, {})
 
-    active = [s for s in subscriptions if not s.get("notified")]
-    if not active:
+    if not subscriptions:
         print("No active subscriptions, nothing to check.")
         return
 
     by_gameweek = defaultdict(list)
-    for sub in active:
+    for sub in subscriptions:
         by_gameweek[(sub["season"], sub["gameweek"])].append(sub)
 
+    to_remove_ids = set()
     changed = False
 
     for (season, gw), subs in by_gameweek.items():
@@ -74,11 +76,13 @@ def main() -> None:
                     print(f"  Referee announced: {match.home} vs {match.away} -> {match.referee}")
                     send_referee_notification(match)
                     state[key] = match.referee
-                    changed = True
-                sub["notified"] = True
+                to_remove_ids.add(id(sub))
                 changed = True
             else:
                 print(f"  Still pending: {match.home} vs {match.away}")
+
+    if to_remove_ids:
+        subscriptions = [s for s in subscriptions if id(s) not in to_remove_ids]
 
     if changed:
         save_json(SUBSCRIPTIONS_FILE, subscriptions)
@@ -87,3 +91,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
