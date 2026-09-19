@@ -62,7 +62,7 @@
     "home": "Getafe CF",
     "away": "Málaga CF",
     "score": null,
-    "referee": null,
+    "referee": "Javier Alberola Rojas",
     "url": "https://www.laliga.com/en-GB/match/temporada-2026-2027-laliga-ea-sports-getafe-cf-malaga-cf-7"
   },
   {
@@ -73,7 +73,7 @@
     "home": "Atlético de Madrid",
     "away": "Real Madrid",
     "score": null,
-    "referee": null,
+    "referee": "Miguel Ángel Ortiz Arias",
     "url": "https://www.laliga.com/en-GB/match/temporada-2026-2027-laliga-ea-sports-atletico-de-madrid-real-madrid-7"
   },
   {
@@ -84,7 +84,7 @@
     "home": "RC Deportivo",
     "away": "Real Betis",
     "score": null,
-    "referee": null,
+    "referee": "César Soto Grado",
     "url": "https://www.laliga.com/en-GB/match/temporada-2026-2027-laliga-ea-sports-rc-deportivo-real-betis-7"
   },
   {
@@ -95,7 +95,7 @@
     "home": "Villarreal CF",
     "away": "Levante UD",
     "score": null,
-    "referee": null,
+    "referee": "Mateo Busquets Ferrer",
     "url": "https://www.laliga.com/en-GB/match/temporada-2026-2027-laliga-ea-sports-villarreal-cf-levante-ud-7"
   },
   {
@@ -106,7 +106,7 @@
     "home": "Valencia CF",
     "away": "Real Sociedad",
     "score": null,
-    "referee": null,
+    "referee": "José Luis Munuera Montero",
     "url": "https://www.laliga.com/en-GB/match/temporada-2026-2027-laliga-ea-sports-valencia-cf-real-sociedad-7"
   }
 ]
